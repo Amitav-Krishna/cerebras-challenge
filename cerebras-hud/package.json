@@ -1,0 +1,20 @@
+{
+  "name": "cerebras-hud",
+  "displayName": "Cerebras HUD",
+  "description": "HUD showing LLM confusion in real-time",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["onLanguage:python"],
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "typescript": "^5.0.0"
+  }
+}
