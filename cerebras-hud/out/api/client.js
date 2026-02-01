@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.analyze = analyze;
 const mockAnalyzer_1 = require("../mock/mockAnalyzer");
 // Set to false when ready to use real API
-const USE_MOCK = true;
+const USE_MOCK = false;
 const API_URL = 'http://localhost:8000/analyze';
 async function analyze(code, uri) {
     if (USE_MOCK) {

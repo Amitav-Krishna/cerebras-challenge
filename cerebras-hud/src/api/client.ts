@@ -2,7 +2,7 @@ import { FileProbs } from '../types/logprobs';
 import { analyze as mockAnalyze } from '../mock/mockAnalyzer';
 
 // Set to false when ready to use real API
-const USE_MOCK = true;
+const USE_MOCK = false;
 const API_URL = 'http://localhost:8000/analyze';
 
 export async function analyze(code: string, uri: string): Promise<FileProbs> {
