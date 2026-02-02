@@ -1,50 +1,60 @@
 import * as vscode from 'vscode';
 import { analyze } from './api/client';
 import { FileProbs } from './types/logprobs';
+import { 
+    activateEntropyLens, 
+    debouncedEntropyHighlight, 
+    clearEntropyDecorations,
+    deactivateEntropyLens 
+} from './features/entropyLens';
+import {
+    activateGhostToken,
+    debouncedGhostUpdate,
+    clearGhostDecorations,
+    deactivateGhostToken
+} from './features/ghostToken';
+import {
+    activateSaliencyLens,
+    debouncedSaliencyUpdate,
+    clearSaliencyDecorations,
+    deactivateSaliencyLens
+} from './features/saliencyLens';
 
-// Only show confusion when logprob is below this threshold
+// Legacy configuration (existing logprob highlighting)
 const CONFUSION_THRESHOLD = -1.0;
-// Debounce delay in ms - wait for typing to pause
 const DEBOUNCE_MS = 300;
 
+// State
 let decorationTypes: vscode.TextEditorDecorationType[] = [];
 let timeout: ReturnType<typeof setTimeout> | null = null;
 let isAnalyzing = false;
 
-function clearDecorations(editor: vscode.TextEditor) {
-    for (const dt of decorationTypes) {
-        editor.setDecorations(dt, []);
-        dt.dispose();
-    }
-    decorationTypes = [];
-}
-
+/**
+ * Get color for logprob-based highlighting (legacy feature).
+ */
 function getColor(logprob: number): string {
     const t = Math.max(0, Math.min(1, (Math.abs(logprob) - 1) / 4));
     const g = Math.floor((1 - t) * 255);
     return `rgba(255, ${g}, 0, 0.4)`;
 }
 
+/**
+ * Legacy: Analyze code for logprob-based highlighting.
+ */
 async function highlight() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
-    // Don't start new analysis if one is running
     if (isAnalyzing) return;
-    
     isAnalyzing = true;
 
     try {
         const code = editor.document.getText();
         const uri = editor.document.uri.toString();
         
-        // Call API (mock or real)
         const analysis = await analyze(code, uri);
         
-        // Clear old decorations
         clearDecorations(editor);
-        
-        // Apply new decorations
         applyDecorations(editor, analysis);
     } catch (err) {
         console.error('Analysis failed:', err);
@@ -53,6 +63,9 @@ async function highlight() {
     }
 }
 
+/**
+ * Legacy: Apply logprob-based decorations.
+ */
 function applyDecorations(editor: vscode.TextEditor, analysis: FileProbs) {
     for (const line of analysis.lines) {
         const lineText = editor.document.lineAt(line.line_number - 1).text;
@@ -86,6 +99,20 @@ function applyDecorations(editor: vscode.TextEditor, analysis: FileProbs) {
     }
 }
 
+/**
+ * Legacy: Clear all decorations.
+ */
+function clearDecorations(editor: vscode.TextEditor) {
+    for (const dt of decorationTypes) {
+        editor.setDecorations(dt, []);
+        dt.dispose();
+    }
+    decorationTypes = [];
+}
+
+/**
+ * Legacy: Debounced highlight.
+ */
 function debouncedHighlight() {
     if (timeout) {
         clearTimeout(timeout);
@@ -95,17 +122,70 @@ function debouncedHighlight() {
     }, DEBOUNCE_MS);
 }
 
-export function activate(context: vscode.ExtensionContext) {
-    highlight();
-
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeTextDocument(() => debouncedHighlight()),
-        vscode.window.onDidChangeActiveTextEditor(() => highlight())
-    );
+/**
+ * Combined update function that triggers both legacy and new features.
+ */
+function onDocumentChange() {
+    // Legacy logprob analysis
+    debouncedHighlight();
+    
+    // New entropy lens
+    debouncedEntropyHighlight();
+    
+    // Ghost token feature
+    debouncedGhostUpdate();
+    
+    // Saliency analysis (expensive, only on explicit trigger or pause)
+    debouncedSaliencyUpdate();
 }
 
+/**
+ * Extension activation.
+ */
+export function activate(context: vscode.ExtensionContext) {
+    console.log('Cerebras HUD: Activating...');
+    
+    // Initialize legacy highlighting
+    highlight();
+    
+    // Initialize new HUD features
+    activateEntropyLens(context);
+    activateGhostToken(context);
+    activateSaliencyLens(context);
+    
+    // Register event handlers
+    context.subscriptions.push(
+        // Combined change handler for both features
+        vscode.workspace.onDidChangeTextDocument(() => onDocumentChange()),
+        
+        // Editor switch handler
+        vscode.window.onDidChangeActiveTextEditor(() => {
+            highlight();
+            debouncedEntropyHighlight();
+            debouncedGhostUpdate();
+            debouncedSaliencyUpdate();
+        }),
+        
+        // Cursor movement for real-time updates
+        vscode.window.onDidChangeTextEditorSelection(() => {
+            debouncedEntropyHighlight();
+            debouncedGhostUpdate();
+            // Note: Saliency only updates on document changes, not cursor moves
+        })
+    );
+    
+    console.log('Cerebras HUD: Activated successfully');
+}
+
+/**
+ * Extension deactivation.
+ */
 export function deactivate() {
     if (timeout) {
         clearTimeout(timeout);
     }
+    
+    deactivateEntropyLens();
+    deactivateGhostToken();
+    deactivateSaliencyLens();
 }
