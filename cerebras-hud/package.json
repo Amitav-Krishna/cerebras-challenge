@@ -14,7 +14,32 @@
     "watch": "tsc --watch"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "@types/vscode": "^1.74.0",
     "typescript": "^5.0.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "cerebrasHud.toggleHud",
+        "title": "Toggle Cerebras HUD",
+        "category": "Cerebras HUD"
+      },
+      {
+        "command": "cerebrasHud.startDemo",
+        "title": "Start Demo",
+        "category": "Cerebras HUD"
+      },
+      {
+        "command": "cerebrasHud.startDemoFast",
+        "title": "Start Demo (Fast - 2x Speed)",
+        "category": "Cerebras HUD"
+      },
+      {
+        "command": "cerebrasHud.stopDemo",
+        "title": "Stop Demo",
+        "category": "Cerebras HUD"
+      }
+    ]
   }
 }

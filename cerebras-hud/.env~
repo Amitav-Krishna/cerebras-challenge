@@ -1,0 +1,6 @@
+# Cerebras API Configuration
+# Get your API key from: https://cloud.cerebras.ai/
+CEREBRAS_API_TOKEN=your_token_here
+
+# Set to 'false' to use real API
+USE_MOCK=true
